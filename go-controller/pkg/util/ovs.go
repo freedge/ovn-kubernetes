@@ -18,6 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/afero"
 
+
 	"k8s.io/klog/v2"
 	kexec "k8s.io/utils/exec"
 )
@@ -180,6 +181,8 @@ type ExecRunner interface {
 type defaultExecRunner struct {
 }
 
+var sem      =   make (chan int, 10)
+
 // RunCmd invokes the methods of the Cmd interfaces defined in k8s.io/utils/exec to execute commands
 // Note: the cmdPath and args parameter are used only for logging and is not processed
 func (runsvc *defaultExecRunner) RunCmd(cmd kexec.Cmd, cmdPath string, envVars []string, args ...string) (*bytes.Buffer, *bytes.Buffer, error) {
@@ -189,6 +192,11 @@ func (runsvc *defaultExecRunner) RunCmd(cmd kexec.Cmd, cmdPath string, envVars [
 	if len(envVars) != 0 {
 		cmd.SetEnv(envVars)
 	}
+	sem <- 1
+	defer func() {
+		<- sem
+	}()
+
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 

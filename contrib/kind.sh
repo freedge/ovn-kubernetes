@@ -512,13 +512,13 @@ set_default_params() {
     KIND_NUM_MASTER=3
     KIND_NUM_WORKER=${KIND_NUM_WORKER:-0}
   else
-    KIND_NUM_WORKER=${KIND_NUM_WORKER:-2}
+    KIND_NUM_WORKER=${KIND_NUM_WORKER:-3}
   fi
   OVN_HOST_NETWORK_NAMESPACE=${OVN_HOST_NETWORK_NAMESPACE:-ovn-host-network}
   OVN_EGRESSIP_HEALTHCHECK_PORT=${OVN_EGRESSIP_HEALTHCHECK_PORT:-9107}
   OCI_BIN=${KIND_EXPERIMENTAL_PROVIDER:-docker}
   OVN_DEPLOY_PODS=${OVN_DEPLOY_PODS:-"ovnkube-master ovnkube-node"}
-  OVN_METRICS_SCALE_ENABLE=${OVN_METRICS_SCALE_ENABLE:-false}
+  OVN_METRICS_SCALE_ENABLE=${OVN_METRICS_SCALE_ENABLE:-true}
   OVN_ISOLATED=${OVN_ISOLATED:-false}
   OVN_GATEWAY_OPTS=""
   if [ "$OVN_ISOLATED" == true ]; then
@@ -754,7 +754,7 @@ create_ovn_kube_manifests() {
     --output-directory="${MANIFEST_OUTPUT_DIR}"\
     --image="${OVN_IMAGE}" \
     --ovnkube-image="${ovnkube_image}" \
-    --net-cidr="${NET_CIDR}" \
+    --net-cidr="${NET_CIDR}/22" \
     --svc-cidr="${SVC_CIDR}" \
     --gateway-mode="${OVN_GATEWAY_MODE}" \
     --gateway-options="${OVN_GATEWAY_OPTS}" \

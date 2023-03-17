@@ -1029,6 +1029,7 @@ ovn-master() {
     ${ovnkube_metrics_scale_enable_flag} \
     ${multi_network_enabled_flag} \
     --metrics-bind-address ${ovnkube_master_metrics_bind_address} \
+    --metrics-enable-pprof=true \
     --host-network-namespace ${ovn_host_network_namespace} &
 
   echo "=============== ovn-master ========== running"

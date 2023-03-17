@@ -31,6 +31,7 @@ kubeadmConfigPatches:
   controllerManager:
     extraArgs:
       "v": "{{ cluster_log_level }}"
+      "node-cidr-mask-size": "22"
   scheduler:
     extraArgs:
       "v": "{{ cluster_log_level }}"
@@ -41,11 +42,13 @@ kubeadmConfigPatches:
   nodeRegistration:
     kubeletExtraArgs:
       "v": "{{ cluster_log_level }}"
+      "max-pods": "800"
   ---
   kind: JoinConfiguration
   nodeRegistration:
     kubeletExtraArgs:
       "v": "{{ cluster_log_level }}"
+      "max-pods": "800"
 nodes:
  - role: control-plane
    kubeadmConfigPatches:

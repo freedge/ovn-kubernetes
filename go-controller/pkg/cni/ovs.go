@@ -38,10 +38,17 @@ func ResetRunner() {
 	runner = nil
 }
 
+var ovssem      =   make (chan int, 10)
+
 func ovsExec(args ...string) (string, error) {
 	if runner == nil {
 		return "", fmt.Errorf("OVS exec runner not initialized")
 	}
+	ovssem <- 1
+	defer func() {
+	        <- ovssem
+	}()
+
 
 	args = append([]string{"--timeout=30"}, args...)
 	output, err := runner.Command(vsctlPath, args...).CombinedOutput()
