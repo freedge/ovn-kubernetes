@@ -5,6 +5,7 @@ networking:
   kubeProxyMode: "none"
   # the default CNI will not be installed
   disableDefaultCNI: true
+  apiServerAddress: "fd42::12"
 {%- if net_cidr %}
   podSubnet: "{{ net_cidr }}"
 {%- endif %}
