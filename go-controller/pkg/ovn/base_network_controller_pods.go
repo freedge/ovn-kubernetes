@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -557,7 +558,8 @@ func (bnc *BaseNetworkController) updatePodAnnotationWithRetry(origPod *kapi.Pod
 
 // Given a switch, gets the next set of addresses (from the IPAM) for each of the node's
 // subnets to assign to the new pod
-func (bnc *BaseNetworkController) assignPodAddresses(switchName string) (net.HardwareAddr, []*net.IPNet, error) {
+// Hint indicates a something about the IP
+func (bnc *BaseNetworkController) assignPodAddresses(switchName string, hint int64) (net.HardwareAddr, []*net.IPNet, error) {
 	var (
 		podMAC   net.HardwareAddr
 		podCIDRs []*net.IPNet
@@ -572,7 +574,7 @@ func (bnc *BaseNetworkController) assignPodAddresses(switchName string) (net.Har
 		}
 		return mac, nil, nil
 	}
-	podCIDRs, err = bnc.lsManager.AllocateNextIPs(switchName)
+	podCIDRs, err = bnc.lsManager.AllocateNextIPs(switchName, hint)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -725,6 +727,14 @@ func (bnc *BaseNetworkController) allocatePodAnnotation(pod *kapi.Pod, existingL
 
 	podAnnotation, err := util.UnmarshalPodAnnotation(pod.Annotations, nadName)
 
+	// XXX
+	var hint int64 = 0
+	annotationHint, ok := pod.Annotations["ipamHint"]
+	if ok {
+		hint, _ = strconv.ParseInt(annotationHint, 10, 64)
+	}
+
+
 	// the IPs we allocate in this function need to be released back to the
 	// IPAM pool if there is some error in any step of addLogicalPort past
 	// the point the IPs were assigned via the IPAM manager.
@@ -798,7 +808,7 @@ func (bnc *BaseNetworkController) allocatePodAnnotation(pod *kapi.Pod, existingL
 				podMac = util.IPAddrToHWAddr(podIfAddrs[0].IP)
 			} else {
 				// Previous attempts to use already configured IPs failed, need to assign new
-				generatedPodMac, generatedPodIfAddrs, err := bnc.assignPodAddresses(switchName)
+				generatedPodMac, generatedPodIfAddrs, err := bnc.assignPodAddresses(switchName, hint)
 				if err != nil {
 					return nil, false, fmt.Errorf("failed to assign pod addresses for pod %s on switch: %s, err: %v",
 						podDesc, switchName, err)

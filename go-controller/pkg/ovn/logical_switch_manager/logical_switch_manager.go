@@ -89,8 +89,8 @@ func (manager *LogicalSwitchManager) AllocateIPs(switchName string, ipnets []*ne
 
 // AllocateNextIPs allocates IP addresses from each of the host subnets
 // for a given switch
-func (manager *LogicalSwitchManager) AllocateNextIPs(switchName string) ([]*net.IPNet, error) {
-	return manager.allocator.AllocateNextIPs(switchName)
+func (manager *LogicalSwitchManager) AllocateNextIPs(switchName string, hint int64) ([]*net.IPNet, error) {
+	return manager.allocator.AllocateNextIPs(switchName, hint)
 }
 
 func (manager *LogicalSwitchManager) AllocateHybridOverlay(switchName string, hybridOverlayAnnotation []string) ([]*net.IPNet, error) {
@@ -125,7 +125,7 @@ func (manager *LogicalSwitchManager) AllocateHybridOverlay(switchName string, hy
 
 	// otherwise try to allocate any IP
 	if err == ipam.ErrAllocated {
-		allocatedAddresses, err = manager.AllocateNextIPs(switchName)
+		allocatedAddresses, err = manager.AllocateNextIPs(switchName, 0)
 	}
 
 	if err != nil {

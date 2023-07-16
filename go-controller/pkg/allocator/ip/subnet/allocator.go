@@ -22,7 +22,7 @@ type Allocator interface {
 	GetSubnets(name string) ([]*net.IPNet, error)
 	AllocateUntilFull(name string) error
 	AllocateIPs(name string, ips []*net.IPNet) error
-	AllocateNextIPs(name string) ([]*net.IPNet, error)
+	AllocateNextIPs(name string, hint int64) ([]*net.IPNet, error)
 	ReleaseIPs(name string, ips []*net.IPNet) error
 	ConditionalIPRelease(name string, ips []*net.IPNet, predicate func() (bool, error)) (bool, error)
 	ForSubnet(name string) NamedAllocator
@@ -31,7 +31,7 @@ type Allocator interface {
 // NamedAllocator manages the allocation of IPs within a specific subnet
 type NamedAllocator interface {
 	AllocateIPs(ips []*net.IPNet) error
-	AllocateNextIPs() ([]*net.IPNet, error)
+	AllocateNextIPs(hint int64) ([]*net.IPNet, error) // TODO should we have a hintNamedAllocator?
 	ReleaseIPs(ips []*net.IPNet) error
 }
 
@@ -153,7 +153,7 @@ func (allocator *allocator) AllocateUntilFull(name string) error {
 	var err error
 	for err != ipallocator.ErrFull {
 		for _, ipam := range subnetInfo.ipams {
-			_, err = ipam.AllocateNext()
+			_, err = ipam.AllocateNext(0)
 		}
 	}
 	return nil
@@ -224,7 +224,7 @@ func reserveSubnets(subnet *net.IPNet, ipam ipallocator.Interface) error {
 }
 
 // AllocateNextIPs allocates IP addresses from the given subnet set
-func (allocator *allocator) AllocateNextIPs(name string) ([]*net.IPNet, error) {
+func (allocator *allocator) AllocateNextIPs(name string, hint int64) ([]*net.IPNet, error) {
 	allocator.RLock()
 	defer allocator.RUnlock()
 	var ipnets []*net.IPNet
@@ -259,7 +259,7 @@ func (allocator *allocator) AllocateNextIPs(name string) ([]*net.IPNet, error) {
 	}()
 
 	for idx, ipam := range subnetInfo.ipams {
-		ip, err = ipam.AllocateNext()
+		ip, err = ipam.AllocateNext(hint)
 		if err != nil {
 			return nil, err
 		}
@@ -350,8 +350,8 @@ func (ipAllocator *IPAllocator) AllocateIPs(ips []*net.IPNet) error {
 }
 
 // AllocateNextIPs allocates the next available IPs
-func (ipAllocator *IPAllocator) AllocateNextIPs() ([]*net.IPNet, error) {
-	return ipAllocator.allocator.AllocateNextIPs(ipAllocator.name)
+func (ipAllocator *IPAllocator) AllocateNextIPs(hint int64) ([]*net.IPNet, error) {
+	return ipAllocator.allocator.AllocateNextIPs(ipAllocator.name, hint)
 }
 
 // ReleaseIPs release the provided IPs

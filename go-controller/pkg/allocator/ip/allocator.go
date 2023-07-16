@@ -30,7 +30,7 @@ import (
 // should be threadsafe.
 type Interface interface {
 	Allocate(net.IP) error
-	AllocateNext() (net.IP, error)
+	AllocateNext(hint int64) (net.IP, error)
 	Release(net.IP)
 	ForEach(func(net.IP))
 	CIDR() net.IPNet
@@ -163,7 +163,7 @@ func (r *Range) Allocate(ip net.IP) error {
 
 // AllocateNext reserves one of the IPs from the pool. ErrFull may
 // be returned if there are no addresses left.
-func (r *Range) AllocateNext() (net.IP, error) {
+func (r *Range) AllocateNext(hint int64) (net.IP, error) {
 	offset, ok, err := r.alloc.AllocateNext()
 	if err != nil {
 		return nil, err
@@ -171,7 +171,12 @@ func (r *Range) AllocateNext() (net.IP, error) {
 	if !ok {
 		return nil, ErrFull
 	}
-	return utilnet.AddIPOffset(r.base, offset), nil
+	if (r.base.BitLen() > 64) { // XXX
+		b := big.NewInt(0).Add(r.base, big.NewInt(0).Lsh(big.NewInt(hint), 48));
+		return utilnet.AddIPOffset(b , offset), nil
+	} else {
+		return utilnet.AddIPOffset(r.base, offset), nil
+	}
 }
 
 // Release releases the IP back to the pool. Releasing an
@@ -233,5 +238,9 @@ func (r *Range) contains(ip net.IP) (bool, int) {
 // calculateIPOffset calculates the integer offset of ip from base such that
 // base + offset = ip. It requires ip >= base.
 func calculateIPOffset(base *big.Int, ip net.IP) int {
-	return int(big.NewInt(0).Sub(utilnet.BigForIP(ip), base).Int64())
+	if (base.BitLen() < 64) {
+		return int(big.NewInt(0).Sub(utilnet.BigForIP(ip), base).Int64())
+	} else {
+		return int(big.NewInt(0).And(utilnet.BigForIP(ip), big.NewInt(0xffff)).Int64())
+	}
 }

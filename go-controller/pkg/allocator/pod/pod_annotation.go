@@ -3,6 +3,7 @@ package pod
 import (
 	"fmt"
 	"net"
+	"strconv"
 
 	v1 "k8s.io/api/core/v1"
 	listers "k8s.io/client-go/listers/core/v1"
@@ -209,6 +210,12 @@ func allocatePodAnnotationWithRollback(
 		nadName = util.GetNADName(network.Namespace, network.Name)
 	}
 	podDesc := fmt.Sprintf("%s/%s/%s", nadName, pod.Namespace, pod.Name)
+	// XXX
+	var hint int64 = 0
+	annotationHint, ok := pod.Annotations["ipamHint"]
+	if ok {
+		hint, _ = strconv.ParseInt(annotationHint, 10, 64)
+	}
 
 	// the IPs we allocate in this function need to be released back to the IPAM
 	// pool if there is some error in any step past the point the IPs were
@@ -320,7 +327,7 @@ func allocatePodAnnotationWithRollback(
 		}
 
 		if len(tentative.IPs) == 0 {
-			tentative.IPs, err = ipAllocator.AllocateNextIPs()
+			tentative.IPs, err = ipAllocator.AllocateNextIPs(hint)
 			if err != nil {
 				err = fmt.Errorf("failed to assign pod addresses for %s: %w", podDesc, err)
 				return
