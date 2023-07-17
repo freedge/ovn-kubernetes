@@ -207,7 +207,14 @@ func (gp *gressPolicy) getMatchFromIPBlock(lportMatch, l4Match string) []string 
 			ipVersion = "ip4"
 		}
 		if len(ipBlock.Except) == 0 {
-			matchStr = fmt.Sprintf("%s.%s == %s", ipVersion, direction, ipBlock.CIDR)
+			leCIDR := ipBlock.CIDR
+			if strings.Contains(leCIDR, "/80") {
+				// netpol expect CIDR and not these weird netmask,
+				// so we define that /80 meaning is in fact this particular mask
+				// TODO define an annotation on the netpol to activate this
+				leCIDR = strings.Replace(leCIDR, "/80", "/ffff:ffff:ffff:0:ffff:0:0:0", 1)
+			}
+			matchStr = fmt.Sprintf("%s.%s == %s", ipVersion, direction, leCIDR)
 		} else {
 			matchStr = fmt.Sprintf("%s.%s == %s && %s.%s != {%s}", ipVersion, direction, ipBlock.CIDR,
 				ipVersion, direction, strings.Join(ipBlock.Except, ", "))
