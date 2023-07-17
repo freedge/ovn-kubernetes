@@ -241,6 +241,6 @@ func calculateIPOffset(base *big.Int, ip net.IP) int {
 	if (base.BitLen() < 64) {
 		return int(big.NewInt(0).Sub(utilnet.BigForIP(ip), base).Int64())
 	} else {
-		return int(big.NewInt(0).And(utilnet.BigForIP(ip), big.NewInt(0xffff)).Int64())
+		return int(big.NewInt(0).And(utilnet.BigForIP(ip), big.NewInt(0xffff)).Int64()) - 1
 	}
 }
