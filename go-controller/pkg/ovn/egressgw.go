@@ -599,27 +599,7 @@ func (oc *DefaultNetworkController) deletePodSNAT(nodeName string, extIPs, podIP
 
 // buildPodSNAT builds per pod SNAT rules towards the nodeIP that are applied to the GR where the pod resides
 func buildPodSNAT(extIPs, podIPNets []*net.IPNet) ([]*nbdb.NAT, error) {
-	nats := make([]*nbdb.NAT, 0, len(extIPs)*len(podIPNets))
-	var nat *nbdb.NAT
-
-	for _, podIPNet := range podIPNets {
-		fullMaskPodNet := &net.IPNet{
-			IP:   podIPNet.IP,
-			Mask: util.GetIPFullMask(podIPNet.IP),
-		}
-		if len(extIPs) == 0 {
-			nat = libovsdbops.BuildSNAT(nil, fullMaskPodNet, "", nil)
-		} else {
-			for _, gwIPNet := range extIPs {
-				if utilnet.IsIPv6CIDR(gwIPNet) != utilnet.IsIPv6CIDR(podIPNet) {
-					continue
-				}
-				nat = libovsdbops.BuildSNAT(&gwIPNet.IP, fullMaskPodNet, "", nil)
-			}
-		}
-		nats = append(nats, nat)
-	}
-	return nats, nil
+	return make([]*nbdb.NAT, 0), nil
 }
 
 // getExternalIPsGR returns all the externalIPs for a node(GR) from its l3 gateway annotation
